@@ -1,0 +1,8 @@
+<% if (typeof usuario !== 'undefined' && usuario) { %>
+    <p>Nombre: <%= usuario.primer_nombre %></p>
+    <p>Apellido: <%= usuario.primer_apellido %></p>
+    <p>Cédula: <%= usuario.cedula %></p>
+    <p>Cargo: <%= usuario.scargo_actual_ejerce %></p>
+<% } else { %>
+    <p>No se encontró información para la cédula ingresada.</p>
+<% } %>
