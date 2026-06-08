@@ -1,0 +1,12 @@
+const { Pool } = require("pg");
+require("dotenv").config();
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+pool.on("error", (err) => {
+  console.error("Error inesperado en el cliente de la base de datos", err);
+});
+module.exports = {
+  query: (text, params) => pool.query(text, params),
+};
