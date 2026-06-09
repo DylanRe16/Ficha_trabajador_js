@@ -1,39 +1,50 @@
 const express = require("express");
-//const db = require("./db");
+const path = require("path");
 const app = express();
 const personaController = require("./controllers/personaController");
+const session = require("express-session");
+const verificarAuth = require("./middleware/auth");
+const authController = require("./controllers/authController");
+
+app.use(express.static(path.join(__dirname, "public")));
+
 app.set("view engine", "ejs");
 app.use(express.json()); // Para recibir datos en formato JSON
 app.use(express.urlencoded({ extended: true })); // Para recibir datos de formularios (form-data)
-app.get("/", async (req, res) => {
-  // Aquí "inyectamos" los datos en una cadena HTML
-  res.render("index");
+app.use(
+  session({
+    secret: "123456789",
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
+app.use((req, res, next) => {
+  // console.log("Procesando ruta:", req.path);
+  res.locals.usuarioLogueado = req.session.usuarioId;
+  next();
+});
+// Ruta pública
+app.get("/login", (req, res) => res.render("login"));
+app.post("/login", authController.login);
+
+// Logout
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect("login"));
 });
 
-app.post("/buscar", personaController.buscarPersona);
+app.get("/", async (req, res) => {
+  // Verificamos si hay sesión (para proteger la página de inicio)
+  if (!req.session.usuarioId) {
+    return res.redirect("/login");
+  } else {
+    // Aquí "inyectamos" los datos en una cadena HTML
+    return res.render("index");
+  }
+});
 
-// app.post("/buscar", async (req, res) => {
-//   const { cedula } = req.body; // Capturamos lo que el usuario escribió
-//   try {
-//     const result = await db.query(
-//       'SELECT * FROM "personales" WHERE cedula = $1',
-//       [cedula],
-//     );
-//     if (result.rows.length > 0) {
-//       res.render("index", {
-//         titulo: "Información del Personal",
-//         usuario: result.rows[0],
-//       });
-//     } else {
-//       res.render("index", {
-//         titulo: "No encontrado",
-//         contenido: "<p>No existe nadie con esa cédula.</p>",
-//       });
-//     }
-//   } catch (err) {
-//     res.send("Error al consultar la base de datos.");
-//   }
-// });
+// Ruta protegida (requiere estar logueado)
+app.post("/buscar", verificarAuth, personaController.buscarPersona);
+
 app.listen(3000, () => {
   console.log("Servidor iniciado en http://localhost:3000");
 });
